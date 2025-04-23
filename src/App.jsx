@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
+// Main UI component: lets you start/stop transcription and shows live captions
 export default function App() {
   // our request headers, used for all API calls
   const COMMON_HEADERS = {
