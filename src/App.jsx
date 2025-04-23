@@ -1,10 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function App() {
+  const COMMON_HEADERS = {
+    "Content-Type": "application/json",
+    Authorization: import.meta.env.VITE_RECALL_API_KEY,
+  };
+
   const [meetingUrl, setMeetingUrl] = useState("");
   const [status, setStatus] = useState("");
   const [events, setEvents] = useState([]);
   const [botId, setBotId] = useState(null);
+  const transcriptRef = useRef(null);
 
   useEffect(() => {
     const es = new EventSource("/events");
@@ -16,6 +22,12 @@ export default function App() {
     return () => es.close();
   }, []);
 
+  useEffect(() => {
+    if (transcriptRef.current) {
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    }
+  }, [events]);
+
   async function startTranscription() {
     setEvents([]);
     setStatus("Starting…");
@@ -24,10 +36,7 @@ export default function App() {
 
     const res = await fetch("/api/bot/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: import.meta.env.VITE_RECALL_API_KEY,
-      },
+      headers: COMMON_HEADERS,
       body: JSON.stringify({
         meeting_url: meetingUrl,
         recording_config: {
@@ -48,7 +57,7 @@ export default function App() {
     }
     const json = await res.json();
     setBotId(json.id);
-    setStatus("Bot Created: Transcription started");
+    setStatus("Bot Created");
   }
 
   async function stopTranscription() {
@@ -56,10 +65,7 @@ export default function App() {
     setStatus("Stopping…");
     const res = await fetch(`/api/bot/${botId}/leave_call/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: import.meta.env.VITE_RECALL_API_KEY,
-      },
+      headers: COMMON_HEADERS,
     });
     if (res.ok) {
       setStatus("Bot Stopped");
@@ -70,18 +76,11 @@ export default function App() {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: 24,
-      }}
-    >
+    <div className="app">
       <h2>Realtime Transcription Demo</h2>
 
       <input
-        style={{ width: "80%", marginBottom: 12, padding: 8 }}
+        className="meeting-input"
         placeholder="Enter Google Meet URL"
         value={meetingUrl}
         onChange={(e) => setMeetingUrl(e.target.value)}
@@ -95,7 +94,7 @@ export default function App() {
         <button
           onClick={stopTranscription}
           disabled={!botId}
-          style={{ marginLeft: 8 }}
+          className="stop-button"
         >
           Stop
         </button>
@@ -104,20 +103,8 @@ export default function App() {
       <p>{status}</p>
 
       <h3>Transcript History</h3>
-      <div
-        style={{
-          width: "500px",
-          maxWidth: "100%",
-          height: "300px",
-          overflowY: "auto",
-          border: "1px solid #444",
-          borderRadius: 8,
-          padding: 16,
-          backgroundColor: "#1e1e1e",
-          color: "#fff",
-        }}
-      >
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+      <div className="transcript" ref={transcriptRef}>
+        <ul className="transcript-list">
           {events.map((evt, i) => {
             const ts = evt.words?.[0]?.start_timestamp?.absolute;
             const timeString = ts
@@ -128,29 +115,12 @@ export default function App() {
                 })
               : "";
             return (
-              <li
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  marginBottom: 12,
-                }}
-              >
-                <div style={{ flex: "0 0 auto" }}>
+              <li key={i} className="transcript-item">
+                <div className="participant">
                   <strong>{evt.participant.name}</strong>
-                  {timeString && (
-                    <div
-                      style={{
-                        fontSize: "0.8em",
-                        color: "#aaa",
-                        marginTop: 2,
-                      }}
-                    >
-                      {timeString}
-                    </div>
-                  )}
+                  {timeString && <div className="timestamp">{timeString}</div>}
                 </div>
-                <div style={{ marginLeft: 12, flex: "1 1 auto" }}>
+                <div className="message">
                   {evt.words.map((w) => w.text).join(" ")}
                 </div>
               </li>
