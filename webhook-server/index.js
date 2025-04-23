@@ -19,7 +19,7 @@ app.get("/events", (req, res) => {
 });
 
 app.post("/webhook", (req, res) => {
-  console.log("📬 Webhook received at", new Date().toISOString());
+  console.log("Webhook received at", new Date().toISOString());
   console.log(JSON.stringify(req.body, null, 2));
   clients.forEach((c) => c.write(`data: ${JSON.stringify(req.body)}\n\n`));
   res.sendStatus(200);
@@ -28,5 +28,5 @@ app.post("/webhook", (req, res) => {
 app.all("*", (_, res) => res.sendStatus(404));
 
 app.listen(3000, () =>
-  console.log("🚀 Webhook & SSE server listening on http://localhost:3000"),
+  console.log("Webhook & SSE server listening on http://localhost:3000"),
 );
