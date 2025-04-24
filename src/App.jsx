@@ -24,7 +24,14 @@ export default function App() {
     es.onmessage = (e) => {
       const payload = JSON.parse(e.data);
       const body = payload.data?.data;
-      if (body) setEvents((prev) => [...prev, body]);
+      if (body)
+        setEvents((prev) =>
+          [...prev, body].sort(
+            (a, b) =>
+              new Date(a.words[0].start_timestamp.absolute) -
+              new Date(b.words[0].start_timestamp.absolute),
+          ),
+        );
     };
     return () => es.close();
   }, []);
